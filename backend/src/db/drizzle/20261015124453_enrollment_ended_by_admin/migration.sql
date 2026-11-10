@@ -1,0 +1,1 @@
+ALTER TYPE "enrollment_end_reason" ADD VALUE 'ended_by_admin';

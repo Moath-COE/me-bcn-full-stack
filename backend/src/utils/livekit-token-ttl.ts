@@ -1,0 +1,1 @@
+export const LIVEKIT_TOKEN_TTL_SECONDS = 10 * 60;

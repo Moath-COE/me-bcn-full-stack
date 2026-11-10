@@ -1,0 +1,232 @@
+/* =============================================================
+   Design tokens: the single source of truth for the visual identity.
+   No colour value is repeated outside this file. Contrast ratios in
+   the comments are WCAG ratios against the surface named beside them.
+
+   The `--becan-` prefix keeps these clear of the Tailwind v4 theme
+   namespaces (`--color-*`, `--font-*`, `--radius-*`). They are mapped
+   to utilities in globals.css.
+   ============================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* ---------- Aubergine: the stage ----------
+     Backgrounds, large sections, headers. */
+  --becan-aubergine-deep: #2b1730;
+  --becan-aubergine-base: #452348;
+  --becan-aubergine-mid: #6b3a70;
+  --becan-aubergine-soft: #a87bac;
+  --becan-aubergine-tint: #eadfeb;
+
+  /* ---------- Ground and surfaces (light theme) ---------- */
+  --becan-ground: #f2f2f5;
+  --becan-surface: #ffffff;
+  --becan-surface-2: #fafafc;
+  --becan-line: #e4e2e9;
+
+  --becan-ink: #232527;
+  --becan-ink-2: #56525e; /* 6.80:1 on the ground */
+  --becan-ink-3: #8a8594; /* 3.21:1: non-text elements only */
+
+  /* ---------- Action: amber ----------
+     Pressable elements only. Never headings or decorative icons. */
+  --becan-pressable: #8a5a1e; /* 5.28:1 on the ground */
+  --becan-on-pressable: #ffffff; /* 5.90:1 on the amber */
+  --becan-amber-bright: #f7b158; /* the dark-theme amber, usable in both themes */
+
+  /* Text on dominant aubergine fills:
+     aubergine-base 13.23:1, aubergine-deep 16.56:1 */
+  --becan-on-dominant: #ffffff;
+
+  /* ---------- Warmth: walnut ----------
+     Logo, dividers, illustrations. Never carries text: it is only
+     3.07:1 on the dark ground. */
+  --becan-warmth: #916140;
+
+  /* ---------- States ----------
+     Success means both "happening now" and "correct answer": one
+     meaning, so `--becan-live` is an alias and not a separate colour. */
+  --becan-success: #276b5a; /* 5.63:1 on the ground */
+  --becan-live: var(--becan-success);
+  --becan-error: #8e2c40; /* errors only, never time or urgency */
+
+  /* ---------- Surface tints ----------
+     Card backgrounds only. */
+  --becan-tint-aubergine: #eadfeb; /* ink on it: 11.90:1 */
+  --becan-tint-amber: #fbebd5; /* 13.14:1 */
+  --becan-tint-walnut: #efe3d8; /* 12.19:1 */
+
+  /* ---------- Olive ---------- */
+  --becan-olive-tint: #e7ecd6; /* card fill; ink on it: 12.72:1 */
+  --becan-olive-soft: #c2d08f; /* light text on olive-dark: 5.07:1 */
+  --becan-olive: #6e7c3c;
+  --becan-olive-dark: #47522a; /* dark card fill; white on it: 8.37:1 */
+  --becan-olive-deep: #39421c; /* icon colour on olive-tint: 8.82:1 */
+
+  /* Brush stroke behind a headline word. Ink on it: 8.34:1 */
+  --becan-highlight: var(--becan-amber-bright);
+
+  /* Focus ring */
+  --becan-ring: var(--becan-aubergine-deep);
+
+  /* ---------- Spacing: 4px base ---------- */
+
+  /* ---------- Radius ---------- */
+  --becan-radius-sm: 8px;
+  --becan-radius-md: 12px;
+  --becan-radius-lg: 16px;
+  --becan-radius-xl: 20px;
+  --becan-radius-pill: 999px;
+
+  /* ---------- Motion ---------- */
+  --becan-motion-base: 250ms;
+
+  /* ---------- Type ----------
+     `--font-ibm-plex` and `--font-el-messiri` are set by next/font in
+     src/app/fonts.ts. The interface uses the sans face for headings
+     too; an Arabic board restores its own values further down. */
+  --becan-font-sans: var(--font-ibm-plex), system-ui, sans-serif;
+  --becan-font-display: var(--becan-font-sans);
+
+  --becan-weight-regular: 400;
+  --becan-weight-medium: 500;
+  --becan-weight-semibold: 600;
+  --becan-weight-bold: 700;
+
+  --becan-tracking-tight: -0.03em; /* bold headings */
+  --becan-leading-base: 1.55;
+  --becan-measure: 74ch; /* body text is at most 74 characters wide */
+
+  /* ---------- Shadows ---------- */
+  --becan-shadow-soft: 0 2px 8px rgb(43 23 48 / 0.06);
+  --becan-shadow-lift: 0 14px 34px rgb(43 23 48 / 0.14);
+
+  /* ---------- Chalkboard ----------
+     A material, not a surface from the theme scale: a real board does
+     not change colour with the room, so it has one value in every
+     theme. It is the darkest thing on the session screen, which
+     separates it from the ground and panels without a loud border.
+
+     The base colour is the measured average of the photo below, so the
+     surface still reads as a board if the image fails to load. */
+  --becan-chalkboard: #23232b;
+  --becan-chalkboard-edge: #3e3e46;
+
+  /* A photographed texture instead of one faked with gradients, served
+     from public/board/ at two sizes in AVIF and WebP. Its lightest
+     patch measures #36363e; the session ink is 9.70:1 on it and the
+     secondary ink 7.81:1, so no darkening overlay is needed. */
+  --becan-chalk-image: image-set(
+    url("/board/chalkboard-800.avif") type("image/avif") 1x,
+    url("/board/chalkboard-1600.avif") type("image/avif") 2x,
+    url("/board/chalkboard-800.webp") type("image/webp") 1x,
+    url("/board/chalkboard-1600.webp") type("image/webp") 2x
+  );
+
+  /* For browsers without image-set(): the `chalkboard` utility declares
+     this first and the image-set second. */
+  --becan-chalk-fallback: url("/board/chalkboard-800.webp");
+}
+
+/* =============================================================
+   Dark theme.
+   Switched on by an explicit `data-theme="dark"` attribute, never by
+   the system preference: pages are always light, and the session and
+   a few dark-filled sections opt in. The ground is tinted aubergine,
+   not grey.
+   ============================================================= */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --becan-ground: #251e2b;
+  --becan-surface: #302838;
+
+  /* Decorative only (1.74:1). In the dark theme no interactive element
+     is told apart by its border alone: inputs are marked by a
+     `--becan-surface` fill, which is what satisfies WCAG 1.4.11. */
+  --becan-line: #4e4356;
+
+  --becan-ink: #ecedee; /* 13.79:1 */
+  --becan-ink-2: #9a8fa0; /* 5.24:1 */
+  /* Two text levels, not three: anything fainter drops below 4.5:1. */
+  --becan-ink-3: var(--becan-ink-2);
+
+  --becan-pressable: #f7b158; /* 8.76:1 */
+  --becan-on-pressable: #232527; /* button text on the bright amber */
+
+  --becan-success: #6fc7ae; /* 8.05:1 */
+  --becan-live: var(--becan-success);
+  --becan-error: #e58b9b; /* 6.54:1 */
+
+  --becan-warmth: #916140; /* 3.07:1: accents only */
+}
+
+/* =============================================================
+   Session surface: a neutral scale with an aubergine lean.
+
+   The plain dark-aubergine ground was tiring over a long session, so
+   the session screen uses its own scale, scoped to
+   [data-surface="session"] so no other screen is affected.
+
+   The scale climbs from the chalkboard: the board is the darkest
+   thing on screen, then the ground, then the panels, then popovers.
+   Each step is lighter than the one below, so every block reads as
+   its own mass without loud borders. Text is softened rather than
+   pure white to avoid glare.
+   ============================================================= */
+[data-surface="session"] {
+  /* The hue leans aubergine (r > g and b > g) rather than blue, which
+     read as a cold clinical grey. How far the surfaces can be raised
+     is capped by `--becan-ink-2`: it must stay readable on the top
+     layer (surface-3), so raising the layers means raising it too. */
+  --becan-ground: #363040; /* screen ground */
+  --becan-panel: #443c4e; /* topics and slides panels, above the ground */
+  --becan-surface: #4e4558; /* the selected element inside a panel */
+  --becan-surface-2: #544a5e; /* bars */
+  --becan-surface-3: #594e63; /* popovers: the top layer */
+  --becan-line: #61566b; /* separates blocks from each other */
+
+  --becan-ink: #e7e7ea; /* 9.70:1 on the lightest patch of the board photo */
+  --becan-ink-2: #d0d0d8; /* lowest reading: 5.08:1 on --becan-surface-3 */
+  /* Two text levels here: the faintest is for borders, not text. */
+  --becan-ink-3: #5e5e6a;
+
+  /* Deep aubergine is only about 1.3:1 on this ground, so the focus
+     ring uses the amber. */
+  --becan-ring: var(--becan-pressable);
+
+  /* ---------- Study lamp ----------
+     Light falling on the board from a lamp above it: a bright spot at
+     the top and a cone that widens downwards and fades before two
+     thirds of the way.
+
+     It is light, not a surface, so its opacity peaks at 22%: it never
+     reads as pressable amber or competes with the start button, and it
+     fades out before the floating bar at the bottom of the board. */
+  --becan-lamp:
+    radial-gradient(
+      ellipse 55% 34% at 38% -6%,
+      rgb(247 177 88 / 0.22),
+      rgb(247 177 88 / 0.06) 55%,
+      rgb(247 177 88 / 0) 78%
+    ),
+    linear-gradient(
+      168deg,
+      rgb(247 177 88 / 0.1) 0%,
+      rgb(247 177 88 / 0.04) 30%,
+      rgb(247 177 88 / 0) 62%
+    );
+
+  /* Darker shadows: the light-theme ones disappear on a dark ground. */
+  --becan-shadow-soft: 0 2px 10px rgb(0 0 0 / 0.45);
+  --becan-shadow-lift: 0 16px 40px rgb(0 0 0 / 0.55);
+}
+
+/* A board the tutor writes in Arabic is an Arabic island inside the
+   English page: Arabic text needs a taller line (at least 1.7) and
+   takes the El Messiri display face for headings. */
+:lang(ar) {
+  --becan-leading-base: 1.75;
+  --becan-font-display: var(--font-el-messiri), Georgia, serif;
+}

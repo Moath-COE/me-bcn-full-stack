@@ -1,0 +1,473 @@
+@import "./tokens.css";
+@import "tailwindcss";
+
+/* Dark theme by explicit attribute, not system preference: pages are light, the session is dark. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* -------------------------------------------------------------
+   Tailwind theme, bound to the tokens.
+
+   `inline` makes every utility emit `var(--becan-…)` directly instead
+   of copying the value, so tokens.css stays the single source: a
+   token change reaches every utility, in both themes.
+   ------------------------------------------------------------- */
+@theme inline {
+  /* Aubergine: the stage */
+  --color-aubergine-deep: var(--becan-aubergine-deep);
+  --color-aubergine-base: var(--becan-aubergine-base);
+  --color-aubergine-mid: var(--becan-aubergine-mid);
+  --color-aubergine-soft: var(--becan-aubergine-soft);
+  --color-aubergine-tint: var(--becan-aubergine-tint);
+
+  /* Surfaces and text */
+  --color-ground: var(--becan-ground);
+  --color-surface: var(--becan-surface);
+  --color-line: var(--becan-line);
+  --color-ink: var(--becan-ink);
+  --color-ink-2: var(--becan-ink-2);
+  --color-ink-3: var(--becan-ink-3);
+
+  /* Action: amber */
+  --color-pressable: var(--becan-pressable);
+  --color-on-pressable: var(--becan-on-pressable);
+  --color-on-dominant: var(--becan-on-dominant);
+
+  /* Warmth: walnut */
+  --color-warmth: var(--becan-warmth);
+
+  /* States */
+  --color-success: var(--becan-success);
+  --color-error: var(--becan-error);
+  --color-live: var(--becan-live);
+
+  /* Surface tints: card backgrounds only */
+  --color-tint-aubergine: var(--becan-tint-aubergine);
+  --color-tint-amber: var(--becan-tint-amber);
+  --color-tint-walnut: var(--becan-tint-walnut);
+
+  /* Session animations */
+  --animate-speak: becan-speak 2600ms ease-in-out infinite;
+  --animate-caret: becan-caret 1000ms step-end infinite;
+  --animate-wave: becan-wave 900ms ease-in-out infinite;
+
+  /* A board line appearing. Each line passes its own delay through
+     `animationDelay`; `both` holds the start state until the delay
+     elapses and the end state afterwards, so no JavaScript is needed. */
+  --animate-board-in: becan-board-in 300ms cubic-bezier(0, 0, 0.2, 1) both;
+
+  /* A calm nudge that draws the eye to the start button: 1.8s per
+     cycle, too slow to distract and too clear to miss. */
+  --animate-nudge: becan-nudge 1800ms ease-in-out infinite;
+
+  /* The face's mouth while the tutor speaks: a speech rhythm, not a decorative pulse */
+  --animate-talk: becan-talk 1600ms ease-in-out infinite;
+
+  /* The device turning in the portrait-orientation notice */
+  --animate-flip: becan-flip 2600ms ease-in-out infinite;
+
+  /* The face idling: blink, wink and tilt */
+  --animate-blink: becan-blink 5200ms ease-in-out infinite;
+  --animate-wink: becan-wink 5200ms ease-in-out infinite;
+  --animate-face-tilt: becan-face-tilt 7500ms ease-in-out infinite;
+
+  /* Focus ring */
+  --color-ring: var(--becan-ring);
+
+  /* Secondary surfaces, shadows and the display font */
+  --color-panel: var(--becan-panel);
+  --color-surface-2: var(--becan-surface-2);
+  --color-surface-3: var(--becan-surface-3);
+  --color-highlight: var(--becan-highlight);
+  --color-chalkboard: var(--becan-chalkboard);
+  --color-chalkboard-edge: var(--becan-chalkboard-edge);
+  --color-olive-tint: var(--becan-olive-tint);
+  --color-olive-soft: var(--becan-olive-soft);
+  --color-olive: var(--becan-olive);
+  --color-olive-dark: var(--becan-olive-dark);
+  --color-olive-deep: var(--becan-olive-deep);
+  --color-amber-bright: var(--becan-amber-bright);
+  --font-display: var(--becan-font-display);
+  --shadow-soft: var(--becan-shadow-soft);
+  --shadow-lift: var(--becan-shadow-lift);
+
+  /* Radius */
+  --radius-sm: var(--becan-radius-sm);
+  --radius-md: var(--becan-radius-md);
+  --radius-lg: var(--becan-radius-lg);
+  --radius-xl: var(--becan-radius-xl);
+  --radius-pill: var(--becan-radius-pill);
+
+  /* Type */
+  --font-sans: var(--becan-font-sans);
+
+  --font-weight-normal: var(--becan-weight-regular);
+  --font-weight-medium: var(--becan-weight-medium);
+  --font-weight-semibold: var(--becan-weight-semibold);
+  --font-weight-bold: var(--becan-weight-bold);
+
+  --tracking-tight: var(--becan-tracking-tight);
+  --leading-base: var(--becan-leading-base);
+
+  /* Spacing: 4px base, in rem so it scales with the browser font size */
+  --spacing: 0.25rem;
+
+  /* Breakpoints: 390 first, then 768, then 1120 */
+  --breakpoint-xl: 70rem; /* 1120px, in rem so the breakpoints keep their order */
+  --container-page: 70rem; /* 1120px */
+  --container-measure: var(--becan-measure);
+}
+
+/* Chalkboard: the base colour and the photo texture together.
+
+   The two consecutive background-image declarations are deliberate: the
+   first is a plain url() fallback and the second uses image-set(). A
+   browser without image-set() drops the second as invalid and keeps the
+   first. Branching inside a token would not work, because the values of
+   custom properties are not validated. */
+@utility chalkboard {
+  background-color: var(--becan-chalkboard);
+  /* The lamp is a light layer over the board photo: it falls on the
+     board surface itself and is clipped by its rounded corners because
+     it is part of the background, not an overlay. Text is drawn above it. */
+  background-image: var(--becan-lamp), var(--becan-chalk-fallback);
+  background-image: var(--becan-lamp), var(--becan-chalk-image);
+  background-size: auto, auto, cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Scrolls without a visible scrollbar (the slide stack). */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes becan-speak {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.12;
+  }
+}
+
+/* Mobile header menu: the panel slides in from the end edge. */
+.becan-menu-panel[data-state="open"] {
+  animation: becan-menu-in var(--becan-motion-base) ease-out;
+}
+.becan-menu-overlay[data-state="open"] {
+  animation: becan-menu-fade var(--becan-motion-base) ease-out;
+}
+@keyframes becan-menu-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes becan-menu-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes becan-wave {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Speech, with a deliberately irregular rhythm.
+
+   A single repeating motion reads as a machine, not as talking: speech
+   is syllables of varying size and length. The keyframes are unevenly
+   spaced and sized, and the cycle is long (1.6s) so the eye does not
+   pick up the repeat. */
+@keyframes becan-talk {
+  0% {
+    transform: scaleY(0.5) scaleX(1);
+  }
+  7% {
+    transform: scaleY(1.35) scaleX(0.96);
+  }
+  15% {
+    transform: scaleY(0.7) scaleX(1.02);
+  }
+  23% {
+    transform: scaleY(1.65) scaleX(0.93);
+  }
+  31% {
+    transform: scaleY(0.45) scaleX(1.04);
+  }
+  39% {
+    transform: scaleY(1.05) scaleX(0.99);
+  }
+  48% {
+    transform: scaleY(0.6) scaleX(1.01);
+  }
+  57% {
+    transform: scaleY(1.5) scaleX(0.95);
+  }
+  66% {
+    transform: scaleY(0.85) scaleX(1);
+  }
+  74% {
+    transform: scaleY(1.2) scaleX(0.97);
+  }
+  83% {
+    transform: scaleY(0.5) scaleX(1.03);
+  }
+  91% {
+    transform: scaleY(1.4) scaleX(0.94);
+  }
+  100% {
+    transform: scaleY(0.5) scaleX(1);
+  }
+}
+
+/* Blink, wink and tilt for the face. */
+@keyframes becan-blink {
+  0%,
+  6%,
+  100% {
+    transform: scaleY(1);
+  }
+  3% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes becan-wink {
+  0%,
+  6%,
+  50%,
+  57%,
+  100% {
+    transform: scaleY(1);
+  }
+  3%,
+  53% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes becan-face-tilt {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-3deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+/* The device turns from portrait to landscape and back, pausing at each
+   end so the motion reads as an instruction, not a continuous spin. */
+@keyframes becan-flip {
+  0%,
+  18% {
+    transform: rotate(0deg);
+  }
+  46%,
+  72% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes becan-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+@keyframes becan-board-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes becan-caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@layer base {
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]
+  ):focus-visible {
+    outline: 2px solid var(--becan-ring);
+    outline-offset: 2px;
+  }
+
+  body {
+    background: var(--becan-ground);
+    color: var(--becan-ink);
+    font-family: var(--becan-font-sans);
+    line-height: var(--becan-leading-base);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    /* The delay is zeroed along with the duration. Otherwise staggered
+       animations would still reveal content late, line by line, for
+       someone who asked for reduced motion. */
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  
+
+}
+
+/* Board pens are quiet borders; they never recolour the text.
+   mark: ink, solid. construct: secondary ink, solid. flow: secondary ink,
+   dashed. trap: walnut, thick double. alt: ink, dotted. Three permitted
+   inks cannot cover five roles, so the line style completes the
+   distinction. Walnut carries the border only; amber stays for actions,
+   green for correct and the error colour for wrong answers. */
+[data-surface="session"] .chalkboard [data-pen="mark"] {
+  border-inline-start: 2px solid var(--becan-ink);
+}
+[data-surface="session"] .chalkboard [data-pen="construct"] {
+  border-inline-start: 2px solid var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-pen="flow"] {
+  border-inline-start: 2px dashed var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-pen="trap"] {
+  border-inline-start: 4px double var(--becan-warmth);
+}
+[data-surface="session"] .chalkboard [data-pen="alt"] {
+  border-inline-start: 3px dotted var(--becan-ink);
+}
+
+[data-surface="session"] .chalkboard [data-mark-highlight] {
+  outline: 2px solid var(--becan-ink);
+  outline-offset: 2px;
+}
+[data-surface="session"] .chalkboard [data-pen="mark"][data-mark-highlight],
+[data-surface="session"] .chalkboard :where([data-pen="mark"]) [data-mark-highlight] {
+  outline: 2px solid var(--becan-ink);
+}
+[data-surface="session"] .chalkboard [data-pen="construct"][data-mark-highlight],
+[data-surface="session"] .chalkboard :where([data-pen="construct"]) [data-mark-highlight] {
+  outline: 2px solid var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-pen="flow"][data-mark-highlight],
+[data-surface="session"] .chalkboard :where([data-pen="flow"]) [data-mark-highlight] {
+  outline: 2px dashed var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-pen="trap"][data-mark-highlight],
+[data-surface="session"] .chalkboard :where([data-pen="trap"]) [data-mark-highlight] {
+  outline: 4px double var(--becan-warmth);
+}
+[data-surface="session"] .chalkboard [data-pen="alt"][data-mark-highlight],
+[data-surface="session"] .chalkboard :where([data-pen="alt"]) [data-mark-highlight] {
+  outline: 3px dotted var(--becan-ink);
+}
+
+/* The icon slot is reserved for correct and wrong. The component puts
+   the icon and its spoken label there, and the text keeps its ink so
+   colour alone never carries the result. */
+[data-surface="session"] .chalkboard [data-mark-answer] {
+  position: relative;
+  padding-inline-start: 1.75rem;
+}
+[data-surface="session"] .chalkboard [data-mark-answer="correct"] {
+  border-inline-end: 3px solid var(--becan-success);
+}
+[data-surface="session"] .chalkboard [data-mark-answer="wrong"] {
+  border-inline-end: 3px solid var(--becan-error);
+}
+[data-surface="session"] .chalkboard [data-mark-answer] > [data-mark-icon] {
+  position: absolute;
+  inset-inline-start: 0;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+[data-surface="session"] .chalkboard [data-mark-answer="correct"] > [data-mark-icon] {
+  color: var(--becan-success);
+}
+[data-surface="session"] .chalkboard [data-mark-answer="wrong"] > [data-mark-icon] {
+  color: var(--becan-error);
+}
+
+/* 0.7 opacity shows dimming without changing the ink. On
+   --becan-chalkboard, --becan-ink is then 6.91:1 and --becan-ink-2 5.73:1
+   (both at least 4.5:1), and the --becan-success and --becan-error icons
+   are 4.54:1 and 3.82:1 (both at least 3:1). Nesting does not compound
+   the dimming: the inner element is reset to 1. */
+[data-surface="session"] .chalkboard :is([data-mark-dim], [data-mark-dimmed-by-focus]) {
+  opacity: 0.7;
+}
+[data-surface="session"] .chalkboard :is([data-mark-dim], [data-mark-dimmed-by-focus]) :is([data-mark-dim], [data-mark-dimmed-by-focus]) {
+  opacity: 1;
+}
+[data-surface="session"] .chalkboard [data-mark-strike] {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-mark-focus] {
+  outline: 2px solid var(--becan-ink);
+  outline-offset: 4px;
+}
+
+/* Example stages can be read from the frame's line style, without relying on colour. */
+[data-surface="session"] .chalkboard [data-stage="worked"] {
+  border: 2px solid var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-stage="faded"] {
+  border: 2px dashed var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-stage="try"] {
+  border: 2px dotted var(--becan-ink-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-surface="session"] .chalkboard :is([data-pen], [data-mark-highlight], [data-mark-answer], [data-mark-dim], [data-mark-strike], [data-mark-focus], [data-mark-dimmed-by-focus], [data-stage]) {
+    animation: none;
+    transition: none;
+  }
+}
+
+@import "./board-l2.css";
+
+@import "./board-l4.css";
+
+@import "./board-l3.css";

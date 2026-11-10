@@ -1,0 +1,103 @@
+/* Structured items (tables, chains, options, equations). */
+
+/* A cancelled structured item gets a frame as well, so the strike-through
+   is not lost among its fields. */
+[data-surface="session"] .chalkboard [data-cancelled] {
+  border-block: 2px dashed var(--becan-ink-2);
+  padding: 0.5rem;
+}
+[data-surface="session"] .chalkboard [data-cancelled]:not([data-pen]) {
+  border-inline-start: 2px dashed var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-cancelled]:not([data-mark-answer]) {
+  border-inline-end: 2px dashed var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-cancelled] :is(p, span, th, td, dt, dd, code) {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--becan-ink-2);
+}
+
+[data-surface="session"] .chalkboard [data-board-row][data-mark-strike] :is(th, td, span) {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--becan-ink-2);
+}
+
+/* The row's correct/wrong icon lives inside the first cell, which keeps
+   the table structure valid. */
+[data-surface="session"] .chalkboard .board-mark-row[data-mark-answer] > :first-child {
+  padding-inline-start: 2rem;
+}
+[data-surface="session"] .chalkboard .board-mark-row[data-mark-answer] > :first-child[data-mark-answer] {
+  padding-inline-start: 3.5rem;
+}
+[data-surface="session"] .chalkboard .board-mark-row[data-mark-answer] > :first-child > [data-mark-icon] {
+  inset-inline-start: 1.5rem;
+}
+[data-surface="session"] .chalkboard .board-row-feedback > [data-mark-icon] {
+  position: absolute;
+  inset-inline-start: 0;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+[data-surface="session"] .chalkboard .board-mark-row[data-mark-answer="correct"] .board-row-feedback {
+  color: var(--becan-success);
+}
+[data-surface="session"] .chalkboard .board-mark-row[data-mark-answer="wrong"] .board-row-feedback {
+  color: var(--becan-error);
+}
+
+/* The `board-mark-*` classes inside an equation are only ever produced by
+   our own wrapping of the LaTeX source. Dimmed parts use the secondary
+   ink, which is still readable. */
+[data-surface="session"] .chalkboard .board-equation[data-equation-focus],
+[data-surface="session"] .chalkboard .board-equation .board-mark-dim {
+  color: var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard .board-equation .board-mark-focus {
+  color: var(--becan-ink);
+  outline: 2px solid var(--becan-ink);
+  outline-offset: 3px;
+}
+[data-surface="session"] .chalkboard .board-mark-highlight {
+  outline: 2px solid var(--becan-ink);
+  outline-offset: 2px;
+}
+[data-surface="session"] .chalkboard [data-pen="mark"].board-mark-highlight,
+[data-surface="session"] .chalkboard :where([data-pen="mark"]) .board-mark-highlight {
+  outline: 2px solid var(--becan-ink);
+}
+[data-surface="session"] .chalkboard [data-pen="construct"].board-mark-highlight,
+[data-surface="session"] .chalkboard :where([data-pen="construct"]) .board-mark-highlight {
+  outline: 2px solid var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-pen="flow"].board-mark-highlight,
+[data-surface="session"] .chalkboard :where([data-pen="flow"]) .board-mark-highlight {
+  outline: 2px dashed var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-pen="trap"].board-mark-highlight,
+[data-surface="session"] .chalkboard :where([data-pen="trap"]) .board-mark-highlight {
+  outline: 4px double var(--becan-warmth);
+}
+[data-surface="session"] .chalkboard [data-pen="alt"].board-mark-highlight,
+[data-surface="session"] .chalkboard :where([data-pen="alt"]) .board-mark-highlight {
+  outline: 3px dotted var(--becan-ink);
+}
+[data-surface="session"] .chalkboard .board-equation .board-mark-correct {
+  border-block-end: 2px solid var(--becan-success);
+}
+[data-surface="session"] .chalkboard .board-equation .board-mark-wrong {
+  border-block-end: 2px solid var(--becan-error);
+}
+[data-surface="session"] .chalkboard .board-equation .board-mark-strike,
+[data-surface="session"] .chalkboard .board-equation .board-mark-strike span {
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard .board-equation .katex-display {
+  margin: 0;
+  inline-size: max-content;
+  min-inline-size: 100%;
+}

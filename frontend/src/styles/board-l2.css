@@ -1,0 +1,17 @@
+/* Board rich text: what the `RichText` pieces need on top of the shared
+   pen and mark rules in globals.css. */
+
+/* An inline highlight is hit by two shared rules: `data-pen` draws a side
+   border meant for a whole item, and `data-mark-highlight` draws an
+   outline. For a piece inside a line the outline is enough, so the border
+   is removed to avoid doubling up. */
+[data-surface="session"] .chalkboard .rt-hl {
+  border: 0;
+}
+
+/* A marked range that was split at the edge of a left-to-right run: the
+   icon sits in the first part only, so the later parts reserve no room
+   for it. */
+[data-surface="session"] .chalkboard [data-rt-continued] {
+  padding-inline-start: 0;
+}

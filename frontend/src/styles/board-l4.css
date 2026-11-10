@@ -1,0 +1,56 @@
+/* Board title, timeline and icon styles. They build on the shared rules in
+   globals.css and add no colours: every value is an existing token. */
+
+/* The board title is larger than an item heading whichever line component
+   draws it, so its size follows its place in the frame, not the item kind. */
+[data-surface="session"] .chalkboard [data-board-title] :is(p, h1, h2, h3, h4) {
+  font-size: 1.25rem;
+  font-weight: var(--becan-weight-bold);
+  line-height: var(--becan-leading-base);
+}
+@media (min-width: 48rem) {
+  [data-surface="session"] .chalkboard [data-board-title] :is(p, h1, h2, h3, h4) {
+    font-size: 1.5rem;
+  }
+}
+
+/* The pen of an icon or a timeline marker is a ring around it, in the same
+   line style the shared pen rules use (solid, dashed, double, dotted), so
+   the pen can be read from the ring's shape before its colour. With no pen
+   a quiet ring in the edge colour remains. */
+[data-surface="session"] .chalkboard [data-icon-glyph],
+[data-surface="session"] .chalkboard [data-marker] {
+  border: 1px solid var(--becan-chalkboard-edge);
+}
+[data-surface="session"] .chalkboard [data-icon-glyph][data-icon-pen="mark"],
+[data-surface="session"] .chalkboard [data-marker][data-pen="mark"] {
+  border: 2px solid var(--becan-ink);
+}
+[data-surface="session"] .chalkboard [data-icon-glyph][data-icon-pen="construct"],
+[data-surface="session"] .chalkboard [data-marker][data-pen="construct"] {
+  border: 2px solid var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-icon-glyph][data-icon-pen="flow"],
+[data-surface="session"] .chalkboard [data-marker][data-pen="flow"] {
+  border: 2px dashed var(--becan-ink-2);
+}
+[data-surface="session"] .chalkboard [data-icon-glyph][data-icon-pen="trap"],
+[data-surface="session"] .chalkboard [data-marker][data-pen="trap"] {
+  border: 4px double var(--becan-warmth);
+}
+[data-surface="session"] .chalkboard [data-icon-glyph][data-icon-pen="alt"],
+[data-surface="session"] .chalkboard [data-marker][data-pen="alt"] {
+  border: 3px dotted var(--becan-ink);
+}
+
+/* A timeline division marked correct or wrong: the icon sits under the
+   label instead of in the corner, and the padding stays symmetric so the
+   axis dot keeps to the centre of its column. */
+[data-surface="session"] .chalkboard [data-timeline] [data-division][data-mark-answer] {
+  padding-inline: 0.25rem;
+}
+[data-surface="session"] .chalkboard [data-timeline] [data-division] > [data-mark-icon] {
+  position: static;
+  display: block;
+  margin-inline: auto;
+}

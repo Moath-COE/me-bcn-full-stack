@@ -1,0 +1,2 @@
+ALTER TABLE "study_session" ADD COLUMN "kind" text DEFAULT 'student' NOT NULL;--> statement-breakpoint
+ALTER TABLE "study_session" ADD CONSTRAINT "study_session_kind_check" CHECK ("kind" IN ('student', 'admin'));

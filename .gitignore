@@ -1,0 +1,7 @@
+# Each app has its own .gitignore; these are a second line of defence at the repository root.
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
