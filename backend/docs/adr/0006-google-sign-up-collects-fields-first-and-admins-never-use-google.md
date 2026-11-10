@@ -1,5 +1,8 @@
 # Google sign-up collects the Account fields first, never creates an Account on its own, and Admins never use Google
 
+**Status: superseded.** Google sign-in has been removed; email and password is the only Sign-in
+method. Accounts created through Google have no password and get one through the password reset flow.
+
 Google is a Sign-in method (Better Auth's `socialProviders.google`), but an Account needs a phone
 number, an Institution and a Major, and Google provides none of them. Those columns stay `NOT NULL`
 and every Account is validated by the same `assertValidNewAccount` as an email sign-up. So:

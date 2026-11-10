@@ -9,7 +9,6 @@ import {
   getAccountEnrollments,
   getAccountSessions,
   postPasswordReset,
-  postVerificationEmail,
   putAccountEnrollment
 } from "../controllers/admin-account.controller.js";
 import {
@@ -85,8 +84,7 @@ router.get(
 );
 router.put("/:accountId/enrollments/:courseId", ...write, putAccountEnrollment);
 router.delete("/:accountId/enrollments/:courseId", ...write, deleteAccountEnrollment);
-// Emails to the Student. Better Auth has no admin endpoint for either, and both must link to the web app.
+// Email to the Student. Better Auth has no admin endpoint for it, and it must link to the web app.
 router.post("/:accountId/password-reset", ...write, postPasswordReset);
-router.post("/:accountId/verification-email", ...write, postVerificationEmail);
 
 export default router;

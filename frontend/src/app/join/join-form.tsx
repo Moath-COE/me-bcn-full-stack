@@ -12,57 +12,33 @@ import {
   TextField,
 } from "@/components/ui/kit";
 import { PasswordField } from "@/components/auth/password-field";
-import { AuthDivider, GoogleButton } from "@/components/auth/google-button";
-import { useGoogleRedirect } from "@/components/auth/use-google-redirect";
 import {
   useAuthReturn,
   useSignedInRedirect,
 } from "@/components/auth/use-auth-return";
 import { authClient } from "@/lib/auth/client";
 import type { Institution } from "@/lib/institutions";
-import {
-  authErrorKey,
-  authErrorMessage,
-  oauthErrorKey,
-  type AuthErrorKey,
-} from "@/lib/auth/errors";
+import { authErrorKey, authErrorMessage, type AuthErrorKey } from "@/lib/auth/errors";
 import { toE164Saudi } from "@/lib/auth/phone";
 import {
-  googleSignUpRequest,
-  saveGoogleJoinDraft,
-  takeGoogleJoinDraft,
-} from "@/lib/auth/google";
-import {
   joinIssueTarget,
-  joinStart,
   planJoinSubmit,
   type JoinField as Field,
   type JoinIssue as Issue,
-  type JoinState,
+  type JoinStep,
 } from "@/lib/auth/join-mode";
 
 export function JoinForm({
   next,
   institutions,
-  initialGoogle = false,
-  noAccountNotice = false,
-  oauthError = "",
 }: {
   next: string;
   institutions: Institution[];
-  /* Google mode from the URL: reached from a Google sign-in whose email has no account, or
-     from an error Google returned. */
-  initialGoogle?: boolean;
-  noAccountNotice?: boolean;
-  oauthError?: string;
 }) {
   const router = useRouter();
-  const { destination, verifyCallbackURL, clearReturn } = useAuthReturn(next);
+  const { destination, clearReturn } = useAuthReturn(next);
   useSignedInRedirect(destination, clearReturn);
-  const [state, setState] = useState<JoinState>(() => joinStart(initialGoogle));
-  const { step, method } = state;
-  const google = method === "google";
-  const { redirecting, start: startGoogle } = useGoogleRedirect();
+  const [step, setStep] = useState<JoinStep>(1);
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -71,12 +47,8 @@ export function JoinForm({
     institutionId: "",
     majorId: "",
   });
-  const [issue, setIssue] = useState<Issue | null>(() => {
-    const key = initialGoogle ? oauthErrorKey(oauthError) : null;
-    return key ? { ...joinIssueTarget(key, "google"), key } : null;
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const pending = submitting || redirecting;
+  const [issue, setIssue] = useState<Issue | null>(null);
+  const [pending, setPending] = useState(false);
   const [retrying, startRetry] = useTransition();
   const majors = institutions.find(
     (item) => item.id === values.institutionId,
@@ -85,15 +57,6 @@ export function JoinForm({
   useEffect(() => {
     if (issue) document.getElementById(`join-${issue.field}`)?.focus();
   }, [issue, step]);
-
-  /* The student came back from Google with an error: restore the university, major and phone
-     number instead of asking again. Storage does not exist during server rendering, so the
-     draft is read after mount, not as the initial state. */
-  useEffect(() => {
-    if (!initialGoogle || !oauthError) return;
-    const draft = takeGoogleJoinDraft();
-    if (draft) queueMicrotask(() => setValues((current) => ({ ...current, ...draft })));
-  }, [initialGoogle, oauthError]);
 
   const message = (field: Field | "form") => issue?.field === field
     ? issue.key === "nameRequired" ? "Enter your name." : authErrorMessage(issue.key)
@@ -114,23 +77,14 @@ export function JoinForm({
   };
 
   const showError = (key: AuthErrorKey) => {
-    const target = joinIssueTarget(key, method);
-    setState((current) => ({ ...current, step: target.step }));
+    const target = joinIssueTarget(key);
+    setStep(target.step);
     setIssue({ field: target.field, key });
-  };
-
-  const submitGoogle = async () => {
-    setIssue(null);
-    saveGoogleJoinDraft(values);
-    /* The destination comes back in the error URL (`next`); the stored copy is no longer needed. */
-    clearReturn();
-    const error = await startGoogle(googleSignUpRequest(destination, values));
-    if (error) showError(authErrorKey(error));
   };
 
   const submitEmail = async () => {
     setIssue(null);
-    setSubmitting(true);
+    setPending(true);
     try {
       const { error } = await authClient.signUp.email({
         name: values.name.trim(),
@@ -139,38 +93,32 @@ export function JoinForm({
         phoneNumber: toE164Saudi(values.phoneNumber)!,
         institutionId: values.institutionId,
         majorId: values.majorId,
-        callbackURL: verifyCallbackURL,
       });
       if (error) {
         showError(authErrorKey(error));
         return;
       }
-      /* The email link and the `next` parameter carry the destination; do not leave a stale
-         copy behind for a later sign-in. */
+      /* Sign-up signs the student in: go straight to the chosen destination. */
       clearReturn();
-      router.push(
-        `/verify-email?${new URLSearchParams({ email: values.email.trim(), next: destination })}`,
-      );
+      router.replace(destination);
     } catch {
       setIssue({ field: "form", key: "generic" });
     } finally {
-      setSubmitting(false);
+      setPending(false);
     }
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (pending) return;
-    const plan = planJoinSubmit(state, values, institutions);
+    const plan = planJoinSubmit(step, values, institutions);
     if (plan.kind === "issue") {
-      setState((current) => ({ ...current, step: plan.step }));
+      setStep(plan.step);
       setIssue(plan.issue);
     } else if (plan.kind === "advance") {
       setIssue(null);
-      setState({ method: "email", step: 2 });
+      setStep(2);
       goToStepTwo();
-    } else if (plan.kind === "google") {
-      await submitGoogle();
     } else {
       await submitEmail();
     }
@@ -178,42 +126,11 @@ export function JoinForm({
 
   return (
     <div className="mt-6 w-full">
-      {noAccountNotice && google ? (
-        <div
-          role="status"
-          className="mb-5 rounded-xl border border-line bg-tint-aubergine px-4 py-3"
-        >
-          <p className="font-semibold text-ink">You don’t have an account yet</p>
-          <p className="mt-1 text-sm leading-base text-ink-2">
-            Complete your details here, then continue to Google and we’ll create your account.
-          </p>
-        </div>
-      ) : null}
-      {!google && step === 1 ? (
-        <>
-          <GoogleButton
-            disabled={pending}
-            onClick={() => {
-              setIssue(null);
-              setState({ method: "google", step: 2 });
-              goToStepTwo();
-            }}
-          >
-            Continue with Google
-          </GoogleButton>
-          <AuthDivider />
-        </>
-      ) : null}
-
       <p
         className="mb-5 text-sm leading-base font-semibold text-ink-2"
         aria-live="polite"
       >
-        {google
-          ? "One step before Google — Your study details"
-          : step === 1
-            ? "Step 1 of 2 — Sign-in details"
-            : "Step 2 of 2 — Your study details"}
+        {step === 1 ? "Step 1 of 2 — Sign-in details" : "Step 2 of 2 — Your study details"}
       </p>
       <form onSubmit={submit} noValidate aria-busy={pending}>
         <fieldset disabled={pending} className="space-y-4">
@@ -358,22 +275,20 @@ export function JoinForm({
             disabled={pending || (step === 2 && !institutions.length)}
             className="w-full"
           >
-            {google
-              ? pending ? "You’re heading to Google…" : "Continue to Google"
-              : pending ? "You’re creating your account…" : step === 1 ? "Next" : "Create your account"}
+            {pending ? "You’re creating your account…" : step === 1 ? "Next" : "Create your account"}
           </PrimaryButton>
           {step === 2 ? (
             <GhostButton
               className="w-full"
               onClick={() => {
-                setState(joinStart(false));
+                setStep(1);
                 setIssue(null);
                 requestAnimationFrame(
                   () => document.getElementById("join-name")?.focus(),
                 );
               }}
             >
-              {google ? "Sign up with email and password instead" : "Back"}
+              Back
             </GhostButton>
           ) : null}
         </fieldset>

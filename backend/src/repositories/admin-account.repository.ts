@@ -17,10 +17,10 @@ export async function accountExists(accountId: string): Promise<boolean> {
   return row !== undefined;
 }
 
-// The address an Account's email goes to, and whether it is verified. Nothing else is read.
+// The address an Account's email goes to. Nothing else is read.
 export async function findAccountEmail(accountId: string) {
   const [row] = await db
-    .select({ email: user.email, emailVerified: user.emailVerified })
+    .select({ email: user.email })
     .from(user)
     .where(eq(user.id, accountId))
     .limit(1);

@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useHasPassword } from "@/components/auth/use-has-password";
 import { ErrorText, FieldLabel, SelectField, TextField } from "@/components/ui/kit";
 import { authClient } from "@/lib/auth/client";
 import { authErrorKey, authErrorMessage } from "@/lib/auth/errors";
@@ -13,7 +12,7 @@ import { planAccountChange, type AccountChange, type SavedAccount } from "./acco
 import { AccountCard, SaveNotice, useSaveNotice } from "./account-ui";
 import { runAccountMutation } from "./auth-mutations";
 import { retryInstitutions } from "./retry-institutions";
-import { AddPasswordForm, EmailForm, PasswordForm } from "./security-forms";
+import { EmailForm, PasswordForm } from "./security-forms";
 
 const textButton = "inline-flex min-h-11 items-center px-2 font-semibold text-ink underline underline-offset-4";
 
@@ -24,7 +23,6 @@ type FieldErrors = Partial<Record<keyof SavedAccount, string>>;
 export function ProfileForm({ account, institutions }: { account: Account; institutions: Institution[] }) {
   const router = useRouter();
   const { saved, ping } = useSaveNotice();
-  const hasPassword = useHasPassword();
   const lastSaved = useRef<SavedAccount>({
     name: account.name,
     phoneNumber: account.phoneNumber,
@@ -305,9 +303,7 @@ export function ProfileForm({ account, institutions }: { account: Account; insti
       </AccountCard>
 
       <AccountCard title="Password">
-        {hasPassword === null ? null : !hasPassword ? (
-          <AddPasswordForm email={account.email} disabled={pending} onPendingChange={setSecurityPending} />
-        ) : changing === "password" ? (
+        {changing === "password" ? (
           <PasswordForm
             disabled={pending}
             onPendingChange={setSecurityPending}

@@ -9,10 +9,7 @@ import {
   listAccountSessions,
   readAccountAllowance
 } from "../services/admin-account.service.js";
-import {
-  resendVerificationEmail,
-  sendPasswordResetEmail
-} from "../services/admin-account-email.service.js";
+import { sendPasswordResetEmail } from "../services/admin-account-email.service.js";
 
 type AccountParams = { accountId: string };
 type EnrollmentParams = AccountParams & { courseId: string };
@@ -90,15 +87,6 @@ export async function postPasswordReset(
   res: Response
 ): Promise<void> {
   await sendPasswordResetEmail(res.locals.session!.user.id, req.params.accountId);
-
-  res.set("Cache-Control", "no-store").status(204).end();
-}
-
-export async function postVerificationEmail(
-  req: Request<AccountParams>,
-  res: Response
-): Promise<void> {
-  await resendVerificationEmail(res.locals.session!.user.id, req.params.accountId);
 
   res.set("Cache-Control", "no-store").status(204).end();
 }

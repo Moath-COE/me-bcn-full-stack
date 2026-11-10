@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ErrorText, FieldLabel, GhostButton, TextField } from "@/components/ui/kit";
 import { authClient } from "@/lib/auth/client";
 import { authErrorKey, authErrorMessage } from "@/lib/auth/errors";
@@ -208,66 +208,5 @@ export function PasswordForm({ onDone, onCancel, onPendingChange, disabled }: Fo
         </div>
       </fieldset>
     </form>
-  );
-}
-
-/* An account created with Google has no password. Adding one reuses the reset flow: the link sent
-   to the account's email lets the student choose a password. */
-export function AddPasswordForm({
-  email,
-  disabled,
-  onPendingChange,
-}: {
-  email: string;
-  disabled: boolean;
-  onPendingChange: (pending: boolean) => void;
-}) {
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
-  const { pending, run } = useSecurityRequest(onPendingChange);
-  const focusNotice = useCallback((node: HTMLParagraphElement | null) => node?.focus(), []);
-
-  const send = async () => {
-    if (pending || disabled) return;
-    setError("");
-    try {
-      await run(async () => {
-        const redirectTo = `/reset-password?${new URLSearchParams({ next: "/account" })}`;
-        const result = await runAccountMutation(() => authClient.requestPasswordReset({ email, redirectTo }));
-        if (result.error) setError(authErrorMessage(result.error));
-        else setSent(true);
-      });
-    } catch {
-      setError(authErrorMessage(null));
-    }
-  };
-
-  return (
-    <>
-      <p className="mt-2 max-w-measure text-sm leading-base text-ink-2">
-        You currently sign in with Google. Add a password to sign in with your email too: we send a link to
-        your email to choose it, and afterwards you sign in again.
-      </p>
-      {sent ? (
-        <p ref={focusNotice} tabIndex={-1} role="status" className="mt-4 max-w-measure leading-base text-ink-2">
-          We sent the password link to {email}. Open it and choose your password.
-        </p>
-      ) : (
-        <button
-          type="button"
-          disabled={pending || disabled}
-          aria-busy={pending}
-          onClick={() => void send()}
-          className="mt-4 inline-flex min-h-11 items-center px-2 font-semibold text-ink underline underline-offset-4 disabled:opacity-60"
-        >
-          {pending ? "Sending the link…" : "Add a password"}
-        </button>
-      )}
-      {error ? (
-        <div role="alert">
-          <ErrorText id="acc-add-password-err">{error}</ErrorText>
-        </div>
-      ) : null}
-    </>
   );
 }

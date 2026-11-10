@@ -7,9 +7,8 @@ import { resolveEmailLocale } from "./locale.js";
 import { changeEmailTemplate } from "./templates/change-email.js";
 import type { RenderedEmail } from "./templates/layout.js";
 import { resetPasswordTemplate } from "./templates/reset-password.js";
-import { verifyEmailTemplate } from "./templates/verify-email.js";
 
-type EmailKind = "verify-email" | "reset-password" | "change-email";
+type EmailKind = "reset-password" | "change-email";
 
 type Recipient = { id: string; name: string; email: string };
 
@@ -44,20 +43,6 @@ function send(kind: EmailKind, recipient: Recipient, email: RenderedEmail): void
   void deliver(kind, recipient, email).catch((error: unknown) => {
     logger.error({ error, kind, userId: recipient.id }, "Email delivery failed");
   });
-}
-
-export function sendVerifyEmail(
-  recipient: Recipient,
-  url: string,
-  request?: Request
-): void {
-  const locale = resolveEmailLocale(request);
-
-  send(
-    "verify-email",
-    recipient,
-    verifyEmailTemplate(locale, { name: recipient.name, url })
-  );
 }
 
 // `recipient.email` is the new address; the link goes there, not to the current one.

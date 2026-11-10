@@ -3,7 +3,6 @@ import {
   APIError,
   createAuthMiddleware,
   getAuthoritativeSessionFromCtx,
-  getOAuthState,
   isAPIError
 } from "better-auth/api";
 import { betterAuth } from "better-auth/minimal";
@@ -26,8 +25,7 @@ import {
 } from "../services/account.service.js";
 import {
   sendChangeEmailVerification,
-  sendResetPasswordEmail,
-  sendVerifyEmail
+  sendResetPasswordEmail
 } from "../services/email/email.service.js";
 import {
   assertFreshSession,
@@ -37,15 +35,6 @@ import {
   SELF_TARGET_PATHS
 } from "../utils/admin-guards.js";
 import { AppError } from "../utils/app-error.js";
-import { appendErrorParam } from "../utils/callback-url.js";
-import {
-  planAdminEmailChange,
-  sendVerificationAfterEmailChange
-} from "../services/admin-account-email.service.js";
-import {
-  googleSignInRefusal,
-  signUpFieldsFromOAuthState
-} from "../services/google-sign-in.service.js";
 import { assignFreePlan } from "../services/plan.service.js";
 import { ac, roles } from "./access-control.js";
 
@@ -64,10 +53,6 @@ async function asAuthError(check: () => Promise<void>): Promise<void> {
 
     throw error;
   }
-}
-
-function isChangeEmailRequest(request?: Request): boolean {
-  return request !== undefined && new URL(request.url).pathname.endsWith("/change-email");
 }
 
 const webOrigin = new URL(env.CORS_ORIGIN).origin;
@@ -90,10 +75,6 @@ function auditKey(ctx: {
 }): object | undefined {
   return ctx.request ?? ctx.headers;
 }
-
-// Set by `hooks.before` when an `/admin/update-user` call changes an email without confirming it, so
-// `hooks.after` sends the verification email to the new address once the update succeeded.
-const pendingVerificationEmails = new WeakMap<object, string>();
 
 export const auth = betterAuth({
   // The web and admin apps each proxy /api/auth/* from their own origin, and email links must
@@ -128,7 +109,6 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
     minPasswordLength: 8,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
@@ -137,66 +117,21 @@ export const auth = betterAuth({
     }
   },
 
+  // Sign-up needs no email verification. The only link sent through this option is the one that
+  // confirms a new address on `/change-email`; Better Auth passes the new address as `user.email`.
   emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
-    autoSignInAfterVerification: true,
+    sendOnSignUp: false,
+    sendOnSignIn: false,
     expiresIn: 60 * 60,
-    // Also sends change-email links; Better Auth passes the new address as `user.email`.
     sendVerificationEmail: async ({ user, url }, request) => {
-      if (isChangeEmailRequest(request)) {
-        sendChangeEmailVerification(user, url, request);
-      } else {
-        sendVerifyEmail(user, url, request);
-      }
+      sendChangeEmailVerification(user, url, request);
     }
   },
 
-  // Google (ADR 0006), only when the OAuth client is configured. Without it `/sign-in/social` answers 404.
-  socialProviders:
-    env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
-      ? {
-          google: {
-            clientId: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-            // Pinned to the web origin: the web proxies /api/auth/* here, and
-            // Google only accepts redirect URIs registered in the Cloud Console.
-            redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
-            prompt: "select_account",
-            // A Google sign-in never creates an Account by itself: the join page must ask for it
-            // with `requestSignUp: true`, after collecting the fields an Account needs.
-            disableImplicitSignUp: true,
-            // Same bar as email sign-up: no session until the address is verified. Google nearly
-            // always says it is; when it does not, Better Auth sends our verification email.
-            requireEmailVerification: true,
-            // Better Auth reads the required Account fields from the Google profile and rejects
-            // the sign-up before `databaseHooks.user.create.before` runs if they are missing.
-            // Hand it the three fields the join page put in the OAuth state; the hook validates them.
-            mapProfileToUser: async () =>
-              signUpFieldsFromOAuthState(await getOAuthState())
-          }
-        }
-      : {},
-
-  account: {
-    // Linking is what lets a Student who signed up with a password sign in with Google. It needs
-    // Google to report the address as verified and the Account's own address to be verified, and
-    // `trustedProviders` is left empty on purpose: a trusted provider skips Google's check.
-    accountLinking: { enabled: true },
-    // Google's tokens are stored but Becan never uses them.
-    encryptOAuthTokens: true
-  },
+  // Nobody requests a verification email directly: the change-email flow sends its own link.
+  disabledPaths: ["/send-verification-email"],
 
   user: {
-    // Gate for OAuth sign-ins and for linking Google to an existing Account (ADR 0006).
-    validateUserInfo: async ({ user, source }) => {
-      // Sign-in and link-account carry the existing Account's id; a new user has no Role yet.
-      if (source.method !== "oauth" || source.action === "create-user" || !user.id)
-        return;
-
-      return googleSignInRefusal(user.id);
-    },
-
     // Named after Better Auth's phoneNumber plugin fields, so enabling the plugin later needs no
     // migration: drop the two phone fields here and add the plugin.
     additionalFields: {
@@ -219,20 +154,6 @@ export const auth = betterAuth({
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
-      // Better Auth hides duplicate emails when verification is required; Becan chose to tell
-      // the student that their email is already taken.
-      if (ctx.path === "/sign-up/email" && typeof ctx.body?.email === "string") {
-        const existingAccount = await ctx.context.internalAdapter.findUserByEmail(
-          ctx.body.email.toLowerCase()
-        );
-        if (existingAccount?.user) {
-          throw APIError.from("UNPROCESSABLE_ENTITY", {
-            code: "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
-            message: "User already exists. Use another email."
-          });
-        }
-      }
-
       // The Admin gate for the admin plugin's endpoints (the plugin checks the permission itself).
       // The caller is the session behind the request's cookie or bearer headers, read with the
       // cookie cache off. No session: leave it to the plugin, which answers 401. /two-factor/* is
@@ -261,73 +182,28 @@ export const auth = betterAuth({
           }
         });
 
-        // An email change by an Admin: the new address starts unverified (unless the same request
-        // confirms it) and gets a verification email. The audit entry is then built from the changed
-        // body, so its `after` shows `emailVerified: false`.
-        const key = auditKey(ctx);
-        let body: unknown = ctx.body;
-        let changedBody: Record<string, unknown> | undefined;
-        if (ctx.path === "/admin/update-user") {
-          const change = await planAdminEmailChange(ctx.body);
-          if (change) {
-            changedBody = { ...(ctx.body as Record<string, unknown>), data: change.data };
-            body = changedBody;
-            if (key !== undefined) pendingVerificationEmails.set(key, change.accountId);
-          }
-        }
-
         // Audit log (ADR 0003): note how the Account looks now, so `hooks.after` can record the change.
+        const key = auditKey(ctx);
         if (key !== undefined && isAuditedAdminPath(ctx.path)) {
-          const pending = await prepareAdminPluginAudit(ctx.path, body, session.user.id);
+          const pending = await prepareAdminPluginAudit(
+            ctx.path,
+            ctx.body,
+            session.user.id
+          );
           if (pending) pendingAdminAudits.set(key, pending);
         }
-
-        if (changedBody) return { context: { body: changedBody } };
       }
     }),
 
     // Writes the Audit log entry for an /admin/* action, only if the endpoint succeeded. A refused
     // or failed call comes back here as an APIError and writes nothing.
     after: createAuthMiddleware(async (ctx) => {
-      // A banned Account opening its verification link: /verify-email marks the email verified and
-      // then auto signs in, and the admin plugin's session hook throws BANNED_USER there, outside
-      // the endpoint's own redirect-on-error handling. Send the browser to the callback URL with
-      // `error=BANNED_USER`, as the endpoint does for its other errors. The session was never
-      // created, so no cookie is set. Without a trusted callback URL, the default error stands.
-      // `emailVerified` stays true: the link did prove the address, and an unban then needs no new one.
-      if (
-        ctx.path === "/verify-email" &&
-        isAPIError(ctx.context.returned) &&
-        ctx.context.returned.body?.code === "BANNED_USER"
-      ) {
-        const callbackURL = ctx.query?.callbackURL;
-        if (
-          typeof callbackURL === "string" &&
-          ctx.context.isTrustedOrigin(callbackURL, { allowRelativePaths: true })
-        ) {
-          return new Response(null, {
-            status: 302,
-            headers: { Location: appendErrorParam(callbackURL, "BANNED_USER") }
-          });
-        }
-      }
-
       const key = auditKey(ctx);
-      const verifyAccountId =
-        key === undefined ? undefined : pendingVerificationEmails.get(key);
-      if (key !== undefined) pendingVerificationEmails.delete(key);
-
       const pending = key === undefined ? undefined : pendingAdminAudits.get(key);
       if (key === undefined || pending === undefined) return;
 
       pendingAdminAudits.delete(key);
       if (isAPIError(ctx.context.returned)) return;
-
-      // The email change happened: the new address needs its verification email. Failures are logged
-      // inside and never fail the call.
-      if (verifyAccountId !== undefined) {
-        await sendVerificationAfterEmailChange(verifyAccountId);
-      }
 
       try {
         await recordAdminPluginAction(pending);
@@ -389,10 +265,8 @@ export const auth = betterAuth({
     storage: "database",
     customRules: {
       "/sign-in/email": { window: 60, max: 5 },
-      "/sign-in/social": { window: 60, max: 10 },
       "/sign-up/email": { window: 10 * 60, max: 5 },
       "/request-password-reset": { window: 10 * 60, max: 3 },
-      "/send-verification-email": { window: 10 * 60, max: 3 },
       "/change-email": { window: 10 * 60, max: 3 }
     }
   },

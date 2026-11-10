@@ -29,7 +29,6 @@ export const AuditAction = {
   ACCOUNT_REVOKE_SESSION: "account.revoke-session",
   ACCOUNT_REVOKE_SESSIONS: "account.revoke-sessions",
   ACCOUNT_PASSWORD_RESET_SENT: "account.password-reset-sent",
-  ACCOUNT_VERIFICATION_EMAIL_SENT: "account.verification-email-sent",
   ENROLLMENT_GRANT: "enrollment.grant",
   ENROLLMENT_END: "enrollment.end"
 } as const;

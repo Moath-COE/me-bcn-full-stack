@@ -11,13 +11,6 @@ async function startServer() {
       logger.info(`Server listening on port ${env.PORT}`);
     });
 
-    // Optional everywhere, but a production without it has no Google sign-in (ADR 0006).
-    if (env.NODE_ENV === "production" && !env.GOOGLE_CLIENT_ID) {
-      logger.warn(
-        "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are not set: Google sign-in is off"
-      );
-    }
-
     server.on("error", async (error) => {
       logger.fatal({ error }, "HTTP server error");
       await db.$client.end();

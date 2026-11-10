@@ -222,7 +222,8 @@ describe("Audit log writes from Better Auth admin endpoints", () => {
       {
         action: "account.revoke-sessions",
         targetId: studentId,
-        before: { sessionCount: 2 },
+        // One from sign-up, which signs the Student in, and one from each sign-in.
+        before: { sessionCount: 3 },
         after: { sessionCount: 0 }
       }
     ]);

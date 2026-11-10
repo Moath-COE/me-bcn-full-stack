@@ -15,10 +15,7 @@ Stored in the auth library's `user` table, which is called the "user row", never
 _Avoid_: user, profile
 
 **Sign-in method**:
-One way a Student can prove they own their Account: a password or Google (later, phone). One Account
-can have several. Google can only sign in to an existing Account or link to one with the same verified
-email; an Account is only created through Google from the join page, which collects the phone number,
-Institution and Major first. An Admin never uses Google.
+One way a Student can prove they own their Account. Today that is a password (later, phone).
 _Avoid_: account (the auth library's table name), credential, provider
 
 **Device session**:

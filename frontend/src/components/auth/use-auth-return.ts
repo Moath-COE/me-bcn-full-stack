@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "@/lib/auth/client";
 import { safeNext } from "@/lib/auth/next-path";
-import { buildVerifyCallbackURL } from "@/lib/auth/verify-callback";
 
 const NEXT_KEY = "becan:next";
 const subscribe = (notify: () => void) => {
@@ -37,7 +36,7 @@ export function useAuthReturn(next: string, remember = true) {
     ? consumedReturn.destination
     : storedDestination;
 
-  /* Only the destination is stored, so the chosen chapter survives the trip through the email link. */
+  /* Only the destination is stored, so the chosen chapter survives moving between auth screens. */
   useEffect(() => {
     if (!next || !remember) return;
     try {
@@ -58,11 +57,7 @@ export function useAuthReturn(next: string, remember = true) {
     }
   }, [next, destination]);
 
-  return {
-    destination,
-    verifyCallbackURL: buildVerifyCallbackURL(destination),
-    clearReturn,
-  };
+  return { destination, clearReturn };
 }
 
 export function useSignedInRedirect(

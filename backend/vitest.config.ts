@@ -9,10 +9,7 @@ export default defineConfig({
       DATABASE_URL: testDatabaseUrl(),
       LIVEKIT_URL: "wss://livekit.test",
       LIVEKIT_API_KEY: "test-key",
-      LIVEKIT_API_SECRET: "test-secret-at-least-32-characters-long",
-      // Google sign-in is configured; tests answer Google's token endpoint themselves.
-      GOOGLE_CLIENT_ID: "google-test-client-id",
-      GOOGLE_CLIENT_SECRET: "google-test-client-secret"
+      LIVEKIT_API_SECRET: "test-secret-at-least-32-characters-long"
     },
     globalSetup: ["./tests/support/global-setup.ts"],
     // Test files share one database.

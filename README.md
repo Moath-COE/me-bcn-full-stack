@@ -17,12 +17,11 @@ This repository is the product's web app and API:
 Becan is a startup, and I was its software engineer. I built the backend and the web app in this
 repository:
 
-- The **authentication system**: email and password with email verification, Google sign-in,
-  password reset, email change, account deletion, TOTP two-factor authentication, and an admin
+- The **authentication system**: email and password sign-up and sign-in, password reset, email change, account deletion, TOTP two-factor authentication, and an admin
   role with permission checks and an audit log.
 - The **REST API**: the course catalog, enrollments, plans with per-period usage limits
   ("allowances"), and issuing the tokens that start a tutor session.
-- The **database schema and migrations**, and the test suite that covers the API (32 test files
+- The **database schema and migrations**, and the test suite that covers the API (30 test files
   run against a real PostgreSQL database).
 - The **web app**: sign-up and sign-in flows, the catalog, the student dashboard, the account
   page, and the live session screen that connects to the tutor and renders its board.
@@ -74,10 +73,8 @@ stored in PostgreSQL and carried by an HTTP-only cookie.
 
 | Flow | What happens |
 |---|---|
-| Sign up | Two steps: name, email and password, then phone number, university and major. The account is created unverified and a verification link is emailed. |
-| Verify email | Opening the link verifies the address and signs the student in. The link expires after one hour and can be re-sent. |
-| Sign in | Email and password. No session is issued until the email is verified. |
-| Google | "Continue with Google" signs in an existing account. Creating an account with Google goes through the join page first, so the required profile fields are collected before the redirect. |
+| Sign up | Two steps: name, email and password, then phone number, university and major. Creating the account signs the student in; there is no email verification step. |
+| Sign in | Email and password. |
 | Two-factor | Accounts with TOTP enabled complete a second step (authenticator code or backup code) before a session exists. Repeated wrong codes lock the step temporarily. |
 | Password reset | An emailed link sets a new password and signs the account out everywhere. |
 | Account changes | Change email (confirmed from the new address), change password, update profile, delete account (typed confirmation plus password). |
@@ -95,22 +92,17 @@ stored in PostgreSQL and carried by an HTTP-only cookie.
   request.
 - **Account rules live in database hooks, not in one endpoint.** A phone number must be a valid,
   unique mobile number and the major must belong to the chosen university. Those checks run on
-  every create and update, so they hold whether the row was written by email sign-up, Google, or
-  an admin action.
-- **Google never creates a half-made account.** Implicit sign-up is off. The join page sends the
-  profile fields with the OAuth request, and they are validated like any other sign-up. Linking
-  Google to an existing account requires both addresses to be verified, so an unverified Google
-  address cannot take over an account
-  ([ADR 0006](backend/docs/adr/0006-google-sign-up-collects-fields-first-and-admins-never-use-google.md)).
+  every create and update, so they hold whether the row was written by sign-up, an account
+  update, or an admin action.
 - **Admins are a role on the same account, checked by permission.** Code asks "may this account
   do X", never "is the role admin". Every admin route needs the permission *and* two-factor
   enabled; removing an account or changing a role also needs a session created in the last ten
-  minutes; admins cannot use Google, because an OAuth session would skip the second factor
+  minutes
   ([ADR 0002](backend/docs/adr/0002-admin-is-a-role-on-the-account-checked-by-permission.md)).
 - **Every admin action is written to an audit log** in our own table, and removing an account
   scrubs that person's details from earlier entries
   ([ADR 0003](backend/docs/adr/0003-own-audit-log-not-better-auth-infrastructure.md)).
-- **Rate limits per endpoint.** Sign-in, sign-up, password reset and verification emails each have
+- **Rate limits per endpoint.** Sign-in, sign-up, password reset and email change each have
   their own limit, stored in the database so they hold across instances. API routes have a global
   limit and per-account limits on writes.
 - **Emails are sent without blocking the response**, so response time does not reveal whether an
@@ -156,7 +148,6 @@ maps it to what the student sees. Request bodies and queries are validated with 
 | GET | `/admin/accounts/:accountId/sessions` | An account's study sessions, paged. |
 | PUT, DELETE | `/admin/accounts/:accountId/enrollments/:courseId` | Grant or end an enrollment. |
 | POST | `/admin/accounts/:accountId/password-reset` | Email the student a password reset link. |
-| POST | `/admin/accounts/:accountId/verification-email` | Re-send the verification email. |
 | GET | `/admin/insights` | Sign-ups, active students, sessions and study time over `?range=7d\|30d\|90d`. |
 | GET | `/admin/audit-log` | The audit log, filterable by actor, target, action and date. |
 
@@ -169,7 +160,7 @@ under `/api/auth/admin/*`, with the extra guards described above.
 | Method | Path | Description |
 |---|---|---|
 | POST | `/livekit/webhook` | Receives LiveKit's signed events. The signature is verified against the raw body, and each event id is processed once. |
-| ALL | `/api/auth/*` | Better Auth's endpoints (sign-up, sign-in, verification, reset, two-factor, session). |
+| ALL | `/api/auth/*` | Better Auth's endpoints (sign-up, sign-in, reset, email change, two-factor, session). |
 
 ## Project layout
 
@@ -190,7 +181,7 @@ backend/
 
 frontend/
   src/
-    app/                   Routes: landing, join, sign-in, verify-email, forgot-password,
+    app/                   Routes: landing, join, sign-in, forgot-password,
                            reset-password, two-factor, courses, dashboard, plans, account, session
     components/            ui (shared kit), auth, session (live session and board)
     lib/                   API access, auth helpers, courses, plans, allowance, session logic
@@ -223,7 +214,7 @@ pnpm dev
 ```
 
 Open http://localhost:3001. Without an email provider configured, the backend logs each email in
-its console instead of sending it, so the verification link for a new account appears there.
+its console instead of sending it, so password reset and change-email links appear there.
 
 **Tests** (backend)
 
@@ -248,7 +239,6 @@ unless its name ends in `_test`.
 | `CORS_ORIGIN` | yes | The web app's origin. |
 | `ADMIN_ORIGIN` | no | The admin dashboard's origin. The default is fine when none is run. |
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | yes | The LiveKit project the tutor agent is deployed to. |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no | Google sign-in. Set both or neither. |
 | `RESEND_API_KEY`, `EMAIL_FROM` | in production | Email delivery. Without them, development logs emails. |
 | `PORT`, `NODE_ENV` | no | Default `3000` and `development`. |
 | `TRUST_PROXY_HOPS`, `TRUSTED_PROXY_CIDRS` | no | How many proxies sit in front of the API, for correct client IPs. |

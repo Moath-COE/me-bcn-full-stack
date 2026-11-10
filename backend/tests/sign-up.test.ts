@@ -1,9 +1,17 @@
 import { eq } from "drizzle-orm";
+import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import app from "../src/app.js";
 import { db } from "../src/db/index.js";
 import { plan, planAssignment, user } from "../src/db/schema/index.js";
-import { resetAccounts, signUp, signUpBody } from "./support/accounts.js";
+import {
+  password,
+  resetAccounts,
+  signUp,
+  signUpBody,
+  webOrigin
+} from "./support/accounts.js";
 
 describe("POST /api/auth/sign-up/email", () => {
   beforeEach(resetAccounts);
@@ -124,4 +132,42 @@ describe("POST /api/auth/sign-up/email", () => {
 
     expect(response.body.user?.phoneNumberVerified ?? false).toBe(false);
   });
+});
+
+describe("no email verification", () => {
+  beforeEach(resetAccounts);
+
+  it("signs the Student in at sign-up", async () => {
+    const response = await signUp(signUpBody()).expect(200);
+
+    expect(response.body.token).toEqual(expect.any(String));
+    expect(response.headers["set-cookie"]?.join(";")).toContain("session_token=");
+  });
+
+  it("lets an Account with an unverified email sign in", async () => {
+    const body = signUpBody();
+    await signUp(body).expect(200);
+
+    const response = await request(app)
+      .post("/api/auth/sign-in/email")
+      .set("Origin", webOrigin)
+      .send({ email: body.email, password })
+      .expect(200);
+
+    expect(response.body.user.emailVerified).toBe(false);
+  });
+
+  it.each(["/api/auth/send-verification-email", "/api/auth/sign-in/social"])(
+    "answers 404 on %s",
+    async (path) => {
+      const body = signUpBody();
+      await signUp(body).expect(200);
+
+      await request(app)
+        .post(path)
+        .set("Origin", webOrigin)
+        .send({ email: body.email, provider: "google", callbackURL: "/" })
+        .expect(404);
+    }
+  );
 });

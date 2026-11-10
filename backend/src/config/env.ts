@@ -57,11 +57,6 @@ const envSchema = z
           .filter(Boolean)
       ),
 
-    // Google sign-in (ADR 0006): the OAuth client from Google Cloud Console. Optional in every
-    // environment; without them Google is simply not offered. Set both or neither.
-    GOOGLE_CLIENT_ID: optionalString,
-    GOOGLE_CLIENT_SECRET: optionalString,
-
     RESEND_API_KEY: optionalString,
 
     EMAIL_FROM: optionalString
@@ -74,20 +69,6 @@ const envSchema = z
         path: ["ADMIN_ORIGIN"],
         message: "ADMIN_ORIGIN and CORS_ORIGIN must use the same scheme"
       });
-    }
-
-    // Google is the same: all or nothing.
-    const google = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"] as const;
-    if (google.some((key) => value[key]) && !google.every((key) => value[key])) {
-      for (const key of google) {
-        if (!value[key]) {
-          ctx.addIssue({
-            code: "custom",
-            path: [key],
-            message: `${key} is required when another GOOGLE_* variable is set`
-          });
-        }
-      }
     }
 
     if (value.NODE_ENV !== "production") {

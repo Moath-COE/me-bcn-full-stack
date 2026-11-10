@@ -1,10 +1,9 @@
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import request from "supertest";
 
 import app from "../../src/app.js";
 import { env } from "../../src/config/env.js";
 import { db } from "../../src/db/index.js";
-import { user } from "../../src/db/schema/index.js";
 
 // The web proxies /api/auth/* from its own origin, so every auth call carries it.
 export const webOrigin = env.CORS_ORIGIN;
@@ -31,13 +30,12 @@ export function signUp(body: Record<string, unknown>) {
   return request(app).post("/api/auth/sign-up/email").set("Origin", webOrigin).send(body);
 }
 
-// Signs up, verifies the email, and signs in. Returns an agent holding the session cookie, and the
+// Signs up and signs in. Returns an agent holding the session cookie, and the
 // cookie header itself for requests outside the app.
 export async function signedInStudent(overrides: Record<string, unknown> = {}) {
   const body = signUpBody(overrides);
 
   await signUp(body).expect(200);
-  await db.update(user).set({ emailVerified: true }).where(eq(user.email, body.email));
 
   const agent = request.agent(app);
 

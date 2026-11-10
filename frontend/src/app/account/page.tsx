@@ -19,8 +19,6 @@ export default async function AccountPage(props: PageProps<"/account">) {
     getInstitutions(),
     getAllowance(),
   ]);
-  // Set when a Google re-authentication for account deletion comes back with an error.
-  const googleError = (Array.isArray(searchParams.error) ? searchParams.error[0] : searchParams.error) || "";
 
   return (
     <PageShell>
@@ -51,7 +49,7 @@ export default async function AccountPage(props: PageProps<"/account">) {
                 Deleting your account permanently removes your details, your enrollments and your session
                 history. It can’t be undone.
               </p>
-              <DeleteAccount googleError={googleError} />
+              <DeleteAccount />
             </AccountCard>
           </div>
         </div>

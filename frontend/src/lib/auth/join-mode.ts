@@ -13,11 +13,7 @@ export type JoinIssue = {
   field: JoinField | "form";
   key: AuthErrorKey | "nameRequired";
 };
-export type JoinState = { method: "email" | "google"; step: 1 | 2 };
-
-/* Google supplies the name, email and password, so Google mode starts at step 2. */
-export const joinStart = (google: boolean): JoinState =>
-  google ? { method: "google", step: 2 } : { method: "email", step: 1 };
+export type JoinStep = 1 | 2;
 
 type JoinValues = {
   name: string;
@@ -29,33 +25,26 @@ type JoinValues = {
 };
 
 export type JoinSubmitPlan =
-  | { kind: "issue"; step: 1 | 2; issue: JoinIssue }
+  | { kind: "issue"; step: JoinStep; issue: JoinIssue }
   | { kind: "advance" }
-  | { kind: "email" }
-  | { kind: "google" };
+  | { kind: "submit" };
 
 export function planJoinSubmit(
-  state: JoinState,
+  step: JoinStep,
   values: JoinValues,
   institutions: Institution[],
 ): JoinSubmitPlan {
-  if (state.method === "email") {
-    const first = validateJoinStepOne(values);
-    if (first) return { kind: "issue", step: 1, issue: first };
-    if (state.step === 1) return { kind: "advance" };
-  }
+  const first = validateJoinStepOne(values);
+  if (first) return { kind: "issue", step: 1, issue: first };
+  if (step === 1) return { kind: "advance" };
   const second = validateJoinStepTwo(values, institutions);
   if (second) return { kind: "issue", step: 2, issue: second };
-  return { kind: state.method };
+  return { kind: "submit" };
 }
 
-/* Where an error from the backend or from Google is shown. With email sign-up, email and
-   password errors belong to step 1. Google mode has no field for them, so they become a
-   form-level error on step 2. */
-export function joinIssueTarget(
-  key: AuthErrorKey,
-  method: JoinState["method"],
-): { field: JoinIssue["field"]; step: 1 | 2 } {
+/* Where an error from the backend is shown: email and password errors belong to step 1, the
+   study details to step 2. */
+export function joinIssueTarget(key: AuthErrorKey): { field: JoinIssue["field"]; step: JoinStep } {
   const field: JoinIssue["field"] =
     key === "emailTaken" || key === "invalidEmail" ? "email"
     : key === "passwordTooShort" || key === "passwordTooLong" || key === "invalidPassword"
@@ -64,8 +53,5 @@ export function joinIssueTarget(
     : key === "invalidInstitution" ? "institutionId"
     : key === "invalidMajor" ? "majorId"
     : "form";
-  if (method === "google") {
-    return { field: field === "email" || field === "password" ? "form" : field, step: 2 };
-  }
   return { field, step: field === "email" || field === "password" ? 1 : 2 };
 }

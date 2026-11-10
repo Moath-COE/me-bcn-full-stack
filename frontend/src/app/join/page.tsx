@@ -7,7 +7,7 @@ import { getInstitutions } from "@/lib/institutions";
 
 export const metadata: Metadata = {
   title: "Create your account — Becan",
-  description: "Create your account and verify your email, then return to the chapter you chose.",
+  description: "Create your account, then return to the chapter you chose.",
 };
 
 export default async function JoinPage(props: PageProps<"/join">) {
@@ -18,7 +18,6 @@ export default async function JoinPage(props: PageProps<"/join">) {
   const course = one(sp.course);
   const chapter = one(sp.chapter);
   const next = one(sp.next);
-  const google = one(sp.method) === "google";
   const institutions = await getInstitutions();
 
   /* The context line shows even without query parameters, so a student who lands here
@@ -44,13 +43,7 @@ export default async function JoinPage(props: PageProps<"/join">) {
             {unlocks ? `Signing up opens: ${unlocks}` : "Signing up opens your course where you left off"}
           </p>
 
-          <JoinForm
-            next={next}
-            institutions={institutions}
-            initialGoogle={google}
-            noAccountNotice={google && one(sp.notice) === "no-account"}
-            oauthError={one(sp.error)}
-          />
+          <JoinForm next={next} institutions={institutions} />
         </div>
       </main>
     </PageShell>

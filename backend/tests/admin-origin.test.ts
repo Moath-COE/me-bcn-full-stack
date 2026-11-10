@@ -13,12 +13,10 @@ import {
 
 // Email delivery is fire-and-forget and logged in tests; capture the links instead.
 const emails = vi.hoisted(() => ({
-  verify: [] as string[],
   reset: [] as string[]
 }));
 
 vi.mock("../src/services/email/email.service.js", () => ({
-  sendVerifyEmail: (_recipient: unknown, url: string) => emails.verify.push(url),
   sendResetPasswordEmail: (_recipient: unknown, url: string) => emails.reset.push(url),
   sendChangeEmailVerification: () => undefined
 }));
@@ -34,7 +32,6 @@ function viaHost(origin: string) {
 
 describe("admin origin", () => {
   beforeEach(async () => {
-    emails.verify.length = 0;
     emails.reset.length = 0;
     await resetAccounts();
   });
@@ -143,7 +140,6 @@ describe("admin origin", () => {
     async function requestReset(headers: Record<string, string>) {
       const body = signUpBody();
       await signUp(body).expect(200);
-      emails.verify.length = 0;
 
       await request(app)
         .post("/api/auth/request-password-reset")
@@ -183,28 +179,6 @@ describe("admin origin", () => {
 
       expect(link.origin).toBe(new URL(webOrigin).origin);
     });
-
-    it("links a verification email sent at sign-up to the app the request came from", async () => {
-      await request(app)
-        .post("/api/auth/sign-up/email")
-        .set(viaHost(adminOrigin))
-        .send(signUpBody())
-        .expect(200);
-
-      await vi.waitFor(() => expect(emails.verify).toHaveLength(1));
-      expect(new URL(emails.verify[0]).origin).toBe(adminOrigin);
-
-      emails.verify.length = 0;
-
-      await request(app)
-        .post("/api/auth/sign-up/email")
-        .set(viaHost(webOrigin))
-        .send(signUpBody())
-        .expect(200);
-
-      await vi.waitFor(() => expect(emails.verify).toHaveLength(1));
-      expect(new URL(emails.verify[0]).origin).toBe(new URL(webOrigin).origin);
-    });
   });
 
   it("signs in from the admin origin", async () => {
@@ -215,6 +189,6 @@ describe("admin origin", () => {
       .post("/api/auth/sign-in/email")
       .set(viaHost(adminOrigin))
       .send({ email: body.email, password })
-      .expect(403); // Unverified: reached the handler, past the origin check.
+      .expect(200);
   });
 });
