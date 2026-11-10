@@ -4,6 +4,8 @@ Becan is a voice tutor for university students. A student picks a course their u
 teaches, opens a chapter, and a tutor explains it out loud, writes on a board as it goes, and
 asks questions to check the student understood. The student can interrupt and ask by voice.
 
+Read more about the project here: [Becan blog post](https://moaz-coe.com/blog/becan-web-dev)
+
 This repository is the product's web app and API:
 
 - [`frontend/`](frontend) — the web app (React 19 with Next.js 16, TypeScript, Tailwind CSS).
@@ -71,14 +73,14 @@ stored in PostgreSQL and carried by an HTTP-only cookie.
 
 **How it works**
 
-| Flow | What happens |
-|---|---|
-| Sign up | Two steps: name, email and password, then phone number, university and major. Creating the account signs the student in; there is no email verification step. |
-| Sign in | Email and password. |
-| Two-factor | Accounts with TOTP enabled complete a second step (authenticator code or backup code) before a session exists. Repeated wrong codes lock the step temporarily. |
-| Password reset | An emailed link sets a new password and signs the account out everywhere. |
-| Account changes | Change email (confirmed from the new address), change password, update profile, delete account (typed confirmation plus password). |
-| Sessions | 30-day sessions, refreshed daily. Signing out or resetting the password ends them. |
+| Flow            | What happens                                                                                                                                                   |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign up         | Two steps: name, email and password, then phone number, university and major. Creating the account signs the student in; there is no email verification step.  |
+| Sign in         | Email and password.                                                                                                                                            |
+| Two-factor      | Accounts with TOTP enabled complete a second step (authenticator code or backup code) before a session exists. Repeated wrong codes lock the step temporarily. |
+| Password reset  | An emailed link sets a new password and signs the account out everywhere.                                                                                      |
+| Account changes | Change email (confirmed from the new address), change password, update profile, delete account (typed confirmation plus password).                             |
+| Sessions        | 30-day sessions, refreshed daily. Signing out or resetting the password ends them.                                                                             |
 
 **Design decisions**
 
@@ -95,7 +97,7 @@ stored in PostgreSQL and carried by an HTTP-only cookie.
   every create and update, so they hold whether the row was written by sign-up, an account
   update, or an admin action.
 - **Admins are a role on the same account, checked by permission.** Code asks "may this account
-  do X", never "is the role admin". Every admin route needs the permission *and* two-factor
+  do X", never "is the role admin". Every admin route needs the permission _and_ two-factor
   enabled; removing an account or changing a role also needs a session created in the last ten
   minutes
   ([ADR 0002](backend/docs/adr/0002-admin-is-a-role-on-the-account-checked-by-permission.md)).
@@ -120,36 +122,36 @@ maps it to what the student sees. Request bodies and queries are validated with 
 
 **Public**
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/health` | Liveness check. |
-| GET | `/plans` | The plans on offer, with their price and limits. |
-| GET | `/institutions` | Universities and their majors, for sign-up. |
-| GET | `/courses` | The course catalog. Optional `?institution=` filter. |
-| GET | `/courses/:courseId` | One course with its chapters. |
+| Method | Path                 | Description                                          |
+| ------ | -------------------- | ---------------------------------------------------- |
+| GET    | `/health`            | Liveness check.                                      |
+| GET    | `/plans`             | The plans on offer, with their price and limits.     |
+| GET    | `/institutions`      | Universities and their majors, for sign-up.          |
+| GET    | `/courses`           | The course catalog. Optional `?institution=` filter. |
+| GET    | `/courses/:courseId` | One course with its chapters.                        |
 
 **Signed-in student**
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/me/enrollments` | The student's active enrollments. |
-| PUT | `/me/enrollments/:courseId` | Enroll. Idempotent: `201` when created, `200` when already enrolled, `409 ENROLLMENT_LIMIT_REACHED` when the plan's course limit is full. |
-| DELETE | `/me/enrollments/:courseId` | Un-enroll (`204`). The enrollment is ended, not erased. |
-| GET | `/me/allowance` | The student's plan, its limits, and usage in the current 30-day period. |
-| POST | `/livekit/token` | Start or continue a tutor session for a chapter. Returns a room token, or `403 NOT_ENROLLED`, `403 SESSIONS_USED_UP`, `403 MINUTES_USED_UP`, `409 CHAPTER_NOT_PUBLISHED`. |
+| Method | Path                        | Description                                                                                                                                                               |
+| ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/me/enrollments`           | The student's active enrollments.                                                                                                                                         |
+| PUT    | `/me/enrollments/:courseId` | Enroll. Idempotent: `201` when created, `200` when already enrolled, `409 ENROLLMENT_LIMIT_REACHED` when the plan's course limit is full.                                 |
+| DELETE | `/me/enrollments/:courseId` | Un-enroll (`204`). The enrollment is ended, not erased.                                                                                                                   |
+| GET    | `/me/allowance`             | The student's plan, its limits, and usage in the current 30-day period.                                                                                                   |
+| POST   | `/livekit/token`            | Start or continue a tutor session for a chapter. Returns a room token, or `403 NOT_ENROLLED`, `403 SESSIONS_USED_UP`, `403 MINUTES_USED_UP`, `409 CHAPTER_NOT_PUBLISHED`. |
 
 **Admin** (permission and two-factor required)
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/admin/accounts` | Search, filter, sort and page through accounts. |
-| GET | `/admin/accounts/:accountId/enrollments` | An account's enrollments, including ended ones. |
-| GET | `/admin/accounts/:accountId/allowance` | An account's plan and usage. |
-| GET | `/admin/accounts/:accountId/sessions` | An account's study sessions, paged. |
-| PUT, DELETE | `/admin/accounts/:accountId/enrollments/:courseId` | Grant or end an enrollment. |
-| POST | `/admin/accounts/:accountId/password-reset` | Email the student a password reset link. |
-| GET | `/admin/insights` | Sign-ups, active students, sessions and study time over `?range=7d\|30d\|90d`. |
-| GET | `/admin/audit-log` | The audit log, filterable by actor, target, action and date. |
+| Method      | Path                                               | Description                                                                    |
+| ----------- | -------------------------------------------------- | ------------------------------------------------------------------------------ |
+| GET         | `/admin/accounts`                                  | Search, filter, sort and page through accounts.                                |
+| GET         | `/admin/accounts/:accountId/enrollments`           | An account's enrollments, including ended ones.                                |
+| GET         | `/admin/accounts/:accountId/allowance`             | An account's plan and usage.                                                   |
+| GET         | `/admin/accounts/:accountId/sessions`              | An account's study sessions, paged.                                            |
+| PUT, DELETE | `/admin/accounts/:accountId/enrollments/:courseId` | Grant or end an enrollment.                                                    |
+| POST        | `/admin/accounts/:accountId/password-reset`        | Email the student a password reset link.                                       |
+| GET         | `/admin/insights`                                  | Sign-ups, active students, sessions and study time over `?range=7d\|30d\|90d`. |
+| GET         | `/admin/audit-log`                                 | The audit log, filterable by actor, target, action and date.                   |
 
 The admin routes serve an internal dashboard that is a separate app and not part of this
 repository. Account management itself (ban, set role, remove) uses Better Auth's admin endpoints
@@ -157,10 +159,10 @@ under `/api/auth/admin/*`, with the extra guards described above.
 
 **Service**
 
-| Method | Path | Description |
-|---|---|---|
-| POST | `/livekit/webhook` | Receives LiveKit's signed events. The signature is verified against the raw body, and each event id is processed once. |
-| ALL | `/api/auth/*` | Better Auth's endpoints (sign-up, sign-in, reset, email change, two-factor, session). |
+| Method | Path               | Description                                                                                                            |
+| ------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/livekit/webhook` | Receives LiveKit's signed events. The signature is verified against the raw body, and each event id is processed once. |
+| ALL    | `/api/auth/*`      | Better Auth's endpoints (sign-up, sign-in, reset, email change, two-factor, session).                                  |
 
 ## Project layout
 
@@ -230,25 +232,25 @@ unless its name ends in `_test`.
 
 **`backend/.env`**
 
-| Variable | Required | Purpose |
-|---|---|---|
-| `DATABASE_URL` | yes | PostgreSQL connection string. |
-| `TEST_DATABASE_URL` | for tests | A separate database whose name ends in `_test`. |
-| `BETTER_AUTH_SECRET` | yes | Signing secret, at least 32 characters (`openssl rand -base64 32`). |
-| `BETTER_AUTH_URL` | yes | The web app's origin; base for links in emails. |
-| `CORS_ORIGIN` | yes | The web app's origin. |
-| `ADMIN_ORIGIN` | no | The admin dashboard's origin. The default is fine when none is run. |
-| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | yes | The LiveKit project the tutor agent is deployed to. |
-| `RESEND_API_KEY`, `EMAIL_FROM` | in production | Email delivery. Without them, development logs emails. |
-| `PORT`, `NODE_ENV` | no | Default `3000` and `development`. |
-| `TRUST_PROXY_HOPS`, `TRUSTED_PROXY_CIDRS` | no | How many proxies sit in front of the API, for correct client IPs. |
+| Variable                                               | Required      | Purpose                                                             |
+| ------------------------------------------------------ | ------------- | ------------------------------------------------------------------- |
+| `DATABASE_URL`                                         | yes           | PostgreSQL connection string.                                       |
+| `TEST_DATABASE_URL`                                    | for tests     | A separate database whose name ends in `_test`.                     |
+| `BETTER_AUTH_SECRET`                                   | yes           | Signing secret, at least 32 characters (`openssl rand -base64 32`). |
+| `BETTER_AUTH_URL`                                      | yes           | The web app's origin; base for links in emails.                     |
+| `CORS_ORIGIN`                                          | yes           | The web app's origin.                                               |
+| `ADMIN_ORIGIN`                                         | no            | The admin dashboard's origin. The default is fine when none is run. |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | yes           | The LiveKit project the tutor agent is deployed to.                 |
+| `RESEND_API_KEY`, `EMAIL_FROM`                         | in production | Email delivery. Without them, development logs emails.              |
+| `PORT`, `NODE_ENV`                                     | no            | Default `3000` and `development`.                                   |
+| `TRUST_PROXY_HOPS`, `TRUSTED_PROXY_CIDRS`              | no            | How many proxies sit in front of the API, for correct client IPs.   |
 
 **`frontend/.env.local`**
 
-| Variable | Required | Purpose |
-|---|---|---|
-| `BACKEND_URL` | in production | Base URL of the API. Defaults to `http://localhost:3000`. |
-| `CONTENT_STORAGE_URL`, `CONTENT_STORAGE_KEY` | for sessions | Object storage holding each chapter's slides and lesson list. |
+| Variable                                     | Required      | Purpose                                                       |
+| -------------------------------------------- | ------------- | ------------------------------------------------------------- |
+| `BACKEND_URL`                                | in production | Base URL of the API. Defaults to `http://localhost:3000`.     |
+| `CONTENT_STORAGE_URL`, `CONTENT_STORAGE_KEY` | for sessions  | Object storage holding each chapter's slides and lesson list. |
 
 Sign-up, sign-in, the catalog, enrollments and the account page work with only the database
 configured. A live tutor session additionally needs the LiveKit project, the tutor agent running
